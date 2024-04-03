@@ -1,13 +1,10 @@
-  # Etape de build avec Maven
   FROM maven as builder
 
   WORKDIR /app
 
-  # Copie du fichier pom.xml et téléchargement des dépendances
   COPY server/search-service/pom.xml .
   RUN mvn dependency:go-offline
 
-  # Copie des fichiers sources et exécution de la construction
   COPY server/search-service/src ./src
   RUN mvn package -DskipTests
 
@@ -16,12 +13,10 @@
 
   WORKDIR /app
 
-  # Copie de l'artifact JAR depuis l'étape précédente
   COPY --from=builder /app/target/search-service-0.0.1-SNAPSHOT.jar .
 
   EXPOSE 10000
 
-  # Exécution de l'application Spring Boot
   ENTRYPOINT ["java", "-jar", "search-service-0.0.1-SNAPSHOT.jar"]
 
 
