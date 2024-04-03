@@ -1,13 +1,10 @@
-# Etape de build avec Maven
 FROM maven:3.6.0-jdk-11 as builder
 
 WORKDIR /app
 
-# Copie du fichier pom.xml et téléchargement des dépendances
 COPY server/authentication-service/pom.xml .
 RUN mvn dependency:go-offline
 
-# Copie des fichiers sources et exécution de la construction
 COPY server/authentication-service/src ./src
 RUN mvn package -DskipTests
 
@@ -17,15 +14,8 @@ FROM openjdk:11
 
 WORKDIR /app
 
-# Copie de l'artifact JAR depuis l'étape précédente
 COPY --from=builder /app/target/authentication-service.jar .
 
-# Exposition du port 8080
 EXPOSE 7000
 
-# Exécution de l'application Spring Boot
 ENTRYPOINT ["java", "-jar", "authentication-service.jar"]
-
-
-# <artifactId>back_employee</artifactId>
-  #    <version>0.0.1-SNAPSHOT</version>
