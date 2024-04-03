@@ -1,5 +1,6 @@
 package org.example.searchservice.controller;
 
+import org.example.searchservice.model.DefaultSuggestion;
 import org.example.searchservice.model.Suggestion;
 import org.example.searchservice.service.SuggestionService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,7 +20,7 @@ public class SearchController {
     }
 
     @GetMapping("default-search-suggestion")
-    public ResponseEntity<List<Suggestion>> searchDefault(){
+    public ResponseEntity<List<DefaultSuggestion>> searchDefault(){
         return ResponseEntity.ok(suggestionService.getDefaultSearchSuggestions());
     }
 }

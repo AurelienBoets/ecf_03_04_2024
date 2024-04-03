@@ -4,6 +4,7 @@ import org.example.searchservice.entity.ApparelCategory;
 import org.example.searchservice.entity.BrandCategory;
 import org.example.searchservice.entity.Category;
 import org.example.searchservice.entity.GenderCategory;
+import org.example.searchservice.model.DefaultSuggestion;
 import org.example.searchservice.model.Suggestion;
 import org.example.searchservice.repository.ApparelCategoryRepository;
 import org.example.searchservice.repository.BrandCategoryRepository;
@@ -26,8 +27,8 @@ public class SuggestionService {
     @Autowired
     private BrandCategoryRepository productBrandCategoryRepository;
 
-    public List<Suggestion> getDefaultSearchSuggestions() {
-        List<Suggestion> suggestions = new ArrayList<>();
+    public List<DefaultSuggestion> getDefaultSearchSuggestions() {
+        List<DefaultSuggestion> suggestions = new ArrayList<>();
         suggestions.addAll(getSuggestionsFromApparelCategory());
         suggestions.addAll(getSuggestionsFromGenderCategory());
         suggestions.addAll(getSuggestionsFromProductBrandCategory());
@@ -42,19 +43,27 @@ public class SuggestionService {
         return suggestions;
     }
 
-    private List<Suggestion> getSuggestionsFromApparelCategory() {
+    private List<DefaultSuggestion> getSuggestionsFromApparelCategory() {
         List<ApparelCategory> categories = apparelCategoryRepository.findAll();
-        return buildSuggestions(categories, "apparels");
+        return buildDefautSuggestions(categories);
     }
 
-    private List<Suggestion> getSuggestionsFromGenderCategory() {
+    private List<DefaultSuggestion> getSuggestionsFromGenderCategory() {
         List<GenderCategory> categories = genderCategoryRepository.findAll();
-        return buildSuggestions(categories, "genders");
+        return buildDefautSuggestions(categories);
     }
 
-    private List<Suggestion> getSuggestionsFromProductBrandCategory() {
+    private List<DefaultSuggestion> getSuggestionsFromProductBrandCategory() {
         List<BrandCategory> categories = productBrandCategoryRepository.findAll();
-        return buildSuggestions(categories, "brands");
+        return buildDefautSuggestions(categories);
+    }
+
+    private List<DefaultSuggestion> buildDefautSuggestions(List<? extends Category> categories){
+        List<DefaultSuggestion> suggestions=new ArrayList<>();
+        for(Category category:categories){
+            suggestions.add(new DefaultSuggestion(category.getKeyword()));
+        }
+        return suggestions;
     }
 
     private List<Suggestion> getSuggestionsFromApparelCategory(String query) {
