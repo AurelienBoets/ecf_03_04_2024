@@ -1,0 +1,153 @@
+version: "3"
+
+services:
+  # Database
+  bdd:
+    container_name: bdd
+    image: mysql:8
+    volumes:
+      - db_data:/var/lib/mysql
+    restart: always
+    ports:
+      - "3308:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: password
+      MYSQL_DATABASE: ecf
+      MYSQL_PASSWORD: password
+    networks:
+      - mysql-phpmyadmin
+
+  # phpmyadmin
+  phpmyadmin:
+    depends_on:
+      - bdd
+    image: phpmyadmin
+    restart: always
+    ports:
+      - "8090:80"
+    environment:
+      PMA_HOST: bdd
+    networks:
+      - mysql-phpmyadmin
+
+  # Redis
+  redis:
+    container_name: redis
+    image: redis:7.2
+    volumes:
+      - db_data:/data
+    ports:
+      - "6379:6379"
+    command: redis-server --save 20 1 --loglevel warning --requirepass mypass
+    networks:
+      - mysql-phpmyadmin
+
+  # Backend
+  springboot-auth:
+    container_name: auth
+    ports:
+      - 7000:7000
+    environment:
+      - PORT= 7000
+      - ACTIVE_PROFILE=dev
+      - DB_HOST=bdd
+      - DB_PORT=3306
+      - DB_SCHEMA=ecf
+      - DB_USER=root
+      - DB_PASS=password
+    build:
+      context: ./
+      dockerfile: server/authentication-service/dockerfile
+    depends_on:
+      - bdd
+    networks:
+      - mysql-phpmyadmin
+
+  springboot-data:
+    container_name: data
+    ports:
+      - 9000:9000
+    environment:
+      - PORT=9000
+      - ACTIVE_PROFILE=dev
+      - DB_HOST= bdd
+      - DB_PORT= 3306
+      - DB_SCHEMA= ecf
+      - DB_USER=root
+      - DB_PASS=password
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - REDIS_PASSWORD=mypass
+    build:
+      context: ./
+      dockerfile: server/common-data-service/dockerfile
+    depends_on:
+      - bdd
+    networks:
+      - mysql-phpmyadmin
+
+  springboot-payment:
+    container_name: payment
+    ports:
+      - 9050:9050
+    environment:
+      - PORT= 9050
+    build:
+      context: ./
+      dockerfile: server/payment-service/dockerfile
+    depends_on:
+      - bdd
+    networks:
+      - mysql-phpmyadmin
+
+  springboot-search:
+    container_name: search
+    ports:
+      - 10000:10000
+    environment:
+      - DB_HOST=bdd
+      - DB_PORT=3306
+      - DB_SCHEMA=ecf
+      - DB_USER=root
+      - DB_PASS=password
+      - PORT=10000
+    build:
+      context: ./
+      dockerfile: server/search-service/dockerfile
+    depends_on:
+      - bdd
+    networks:
+      - mysql-phpmyadmin
+
+  # Frontend
+  react-nginx:
+    build:
+      context: ./client
+      dockerfile: dockerfile
+    container_name: react-nginx
+    ports:
+      - 3000:80
+    environment:
+      - REACT_APP_AUTHENTICATION_SERVICE_PORT=7000
+      - REACT_APP_PAYMENT_SERVICE_PORT=9050
+      - REACT_APP_COMMON_DATA_SERVICE_PORT=9000
+      - REACT_APP_SEARCH_SUGGESTION_SERVICE_PORT=10000
+      - REACT_APP_COMMON_DATA_SERVICE_IP=localhost
+      - REACT_APP_AUTHENTICATION_SERVICE_URL=http://localhost:7000
+      - REACT_APP_COMMON_DATA_SERVICE_URL=http://localhost:9000
+      - REACT_APP_PAYMENT_SERVICE_URL=http://localhost:9050
+      - REACT_APP_SEARCH_SUGGESTION_SERVICE_URL=http://localhost:10000
+      - REACT_APP_ENVIRONMENT=dev
+    depends_on:
+      - springboot-data
+      - springboot-auth
+      - springboot-payment
+    networks:
+      - mysql-phpmyadmin
+
+networks:
+  mysql-phpmyadmin:
+    driver: bridge
+
+volumes:
+  db_data:
